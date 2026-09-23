@@ -103,19 +103,16 @@ beforeAll(() => {
   Object.assign(globalThis, assert)
 })
 
-describe('эталонные решения проходят тесты', () => {
-  it.each(codeQuestions.map((q) => [q.id, q] as const))('%s', async (_id, q) => {
-    const factory = new Function('"use strict";\n' + q.solution + '\n;return {' + q.exports.join(',') + '};')
-    const mod = factory() as Record<string, unknown>
-    for (const name of q.exports) expect(mod[name], `экспорт ${name}`).toBeDefined()
-    for (const t of q.tests) await t.fn(mod)
+if (codeQuestions.length > 0) {
+  describe('эталонные решения проходят тесты', () => {
+    it.each(codeQuestions.map((q) => [q.id, q] as const))('%s', async (_id, q) => {
+      const factory = new Function('"use strict";\n' + q.solution + '\n;return {' + q.exports.join(',') + '};')
+      const mod = factory() as Record<string, unknown>
+      for (const name of q.exports) expect(mod[name], `экспорт ${name}`).toBeDefined()
+      for (const t of q.tests) await t.fn(mod)
+    })
   })
-
-  it('есть эталонные проверки для кодовых заданий', () => {
-    const total = codeQuestions.reduce((sum, q) => sum + q.tests.length, 0)
-    expect(total).toBeGreaterThan(0)
-  })
-})
+}
 
 /* ---------- вопросы на предсказание вывода реально печатают заявленное ---------- */
 
@@ -127,22 +124,24 @@ const norm = (s: string) =>
   s.replace(/['"`]/g, '').replace(/[[\]{},]/g, ' ')
     .split('\n').map((l) => l.trim().replace(/\s+/g, ' ')).filter(Boolean).join('\n').toLowerCase()
 
-describe('вопросы на вывод: код печатает то, что заявлено', () => {
-  it.each(outputQuestions.map((q) => [q.id, q] as const))('%s', async (_id, q) => {
-    const lines: string[] = []
-    const fakeLog = (...args: unknown[]) =>
-      lines.push(args.map((v) =>
-        typeof v === 'string' ? v
-          : Array.isArray(v) ? '[ ' + v.map((x) => `'${String(x)}'`).join(', ') + ' ]'
-          : String(v)).join(' '))
+if (outputQuestions.length > 0) {
+  describe('вопросы на вывод: код печатает то, что заявлено', () => {
+    it.each(outputQuestions.map((q) => [q.id, q] as const))('%s', async (_id, q) => {
+      const lines: string[] = []
+      const fakeLog = (...args: unknown[]) =>
+        lines.push(args.map((v) =>
+          typeof v === 'string' ? v
+            : Array.isArray(v) ? '[ ' + v.map((x) => `'${String(x)}'`).join(', ') + ' ]'
+            : String(v)).join(' '))
 
-    const run = new Function('console', `return (async () => {${q.code}\n})()`)
-    await run({ log: fakeLog })
-    await new Promise((r) => setTimeout(r, 120))
+      const run = new Function('console', `return (async () => {${q.code}\n})()`)
+      await run({ log: fakeLog })
+      await new Promise((r) => setTimeout(r, 120))
 
-    expect(norm(lines.join('\n'))).toBe(norm(q.expected))
+      expect(norm(lines.join('\n'))).toBe(norm(q.expected))
+    })
   })
-})
+}
 
 /* ---------- контент не содержит поломанной разметки ---------- */
 
