@@ -54,7 +54,7 @@ export function ExamMode({ pack }: { pack: ContentPack }) {
   const [article, setArticle] = useState<TheoryArticle | null>(null)
 
   // Экран темы хранится в URL: браузерные «назад/вперёд» остаются внутри
-  // экзамена вместо выхода в предыдущий пак (например, «Собеседование»).
+  // экзамена вместо выхода на главную страницу.
   const examView = searchParams.get('examView')
   const examTopicId = searchParams.get('examTopic')
   useEffect(() => {
@@ -142,7 +142,7 @@ export function ExamMode({ pack }: { pack: ContentPack }) {
       <div className="tg-map-heading"><div><div className="tg-eyebrow">Экзаменационные темы</div><h2>Выбери тему</h2></div><span>{allComplete ? 'Темы можно пройти повторно' : 'Порядок свободный'}</span></div>
       <button type="button" className="btn" onClick={() => { setStage('cards'); updateExamLocation({ examView: 'cards', examTopic: null }) }}>Открыть карточки терминов · {exam.cards.length}</button>
       <div className="tg-worlds">{worlds.map((world) => <section className="tg-world" key={world.name}><div className="tg-world-heading"><h3>{world.name}</h3><span>{world.articles.filter((item) => done.includes(item.id)).length}/{world.articles.length} тем</span></div><div className="tg-chapters">{world.articles.map((item, i) => { const blocks = item.body.match(/<h5\b/g)?.length ?? 0; const tasks = exam.questions.filter((q) => q.topic === item.topic).length; return <button key={item.id} type="button" className={['tg-chapter', done.includes(item.id) ? 'complete' : ''].filter(Boolean).join(' ')} onClick={() => openChapter(item)}><span className="tg-chapter-mark">{done.includes(item.id) ? '✓' : String(i + 1).padStart(2, '0')}</span><span className="tg-chapter-copy"><b>{item.title}</b><small>{item.lead}</small></span><span className="tg-chapter-xp">{blocks} блоков · {tasks} задач</span></button> })}</div></section>)}</div>
-      <p className="tg-footnote">Прогресс экзамена хранится отдельно от вкладки собеседования и обычных отметок по теории.</p>
+      <p className="tg-footnote">Прогресс экзамена хранится отдельно от обычных отметок по теории.</p>
     </div>
   )
 }

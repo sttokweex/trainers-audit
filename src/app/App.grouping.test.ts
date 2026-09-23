@@ -38,25 +38,25 @@ describe('группировка карточек по теме (App.tsx grouped
   afterEach(() => { for (const c of containers) c.remove() })
 
   it('прямой заход с готовым topic в URL даёт один блок без дублей', async () => {
-    const c = await renderAt('/interview?mode=theory&topic=' + encodeURIComponent('ООП и принципы'))
+    const c = await renderAt('/audit?mode=theory&topic=' + encodeURIComponent('Методология'))
     containers.push(c)
-    expect(groupsOf(c)).toEqual(['ООП и принципы'])
+    expect(groupsOf(c)).toEqual(['Методология'])
   })
 
   it('клик по теме в сайдбаре после загрузки в режиме «Теория» не дублирует заголовки', async () => {
-    const c = await renderAt('/interview?mode=theory')
+    const c = await renderAt('/audit?mode=theory')
     containers.push(c)
-    const target = Array.from(c.querySelectorAll('button.tp')).find((b) => b.textContent?.includes('ООП и принципы'))
+    const target = Array.from(c.querySelectorAll('button.tp')).find((b) => b.textContent?.includes('Методология'))
     expect(target).toBeTruthy()
     await act(async () => {
       target!.dispatchEvent(new Event('click', { bubbles: true }))
       await new Promise((r) => setTimeout(r, 50))
     })
-    expect(groupsOf(c)).toEqual(['ООП и принципы'])
+    expect(groupsOf(c)).toEqual(['Методология'])
   })
 
   it('переключение из «Вопросы» с темой в режим «Теория» не тащит чужие темы', async () => {
-    const c = await renderAt('/interview?topic=' + encodeURIComponent('ООП и принципы'))
+    const c = await renderAt('/audit?topic=' + encodeURIComponent('Методология'))
     containers.push(c)
     const theoryBtn = Array.from(c.querySelectorAll('.modes button')).find((b) => b.textContent?.trim() === 'Теория')
     expect(theoryBtn).toBeTruthy()
@@ -71,16 +71,16 @@ describe('группировка карточек по теме (App.tsx grouped
     expect(onButtons[0]?.textContent).toContain('Все темы')
   })
 
-  it.each(['interview', 'audit'])('ни один заголовок группы не повторяется в паке «%s» (теория)', async (packId) => {
-    const c = await renderAt(`/${packId}?mode=theory`)
+  it('ни один заголовок группы не повторяется в теории аудита', async () => {
+    const c = await renderAt('/audit?mode=theory')
     containers.push(c)
     const groups = groupsOf(c)
     expect(groups.length).toBeGreaterThan(0)
     expect(new Set(groups).size).toBe(groups.length)
   })
 
-  it.each(['interview', 'audit'])('ни один заголовок группы не повторяется в паке «%s» (вопросы)', async (packId) => {
-    const c = await renderAt(`/${packId}?mode=questions`)
+  it('ни один заголовок группы не повторяется в вопросах аудита', async () => {
+    const c = await renderAt('/audit?mode=questions')
     containers.push(c)
     const groups = groupsOf(c)
     expect(groups.length).toBeGreaterThan(0)

@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 
 /**
  * Редактор кода для задач. CodeMirror вместо textarea: подсветка синтаксиса,
- * автоотступы, парные скобки — на собеседовании пишут примерно в такой среде.
+ * автоотступы и парные скобки — как в обычной среде разработки.
  */
 export function CodeEditor({
   value, onChange, onRun, minHeight = '180px',

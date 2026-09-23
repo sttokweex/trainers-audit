@@ -1,24 +1,19 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { DEFAULT_PACK, PACK_META, loadPack } from '@/content'
+import { DEFAULT_PACK, loadPack } from '@/content'
 import { QuestionCard } from '@/engine/components/QuestionCard'
 import { CardsMode } from '@/engine/components/modes/CardsMode'
 import { PlanMode } from '@/engine/components/modes/PlanMode'
 import { ToolsMode } from '@/engine/components/modes/ToolsMode'
-import { DashboardMode } from '@/engine/components/modes/DashboardMode'
-import { SessionMode } from '@/engine/components/modes/SessionMode'
-import { TheoryGameMode } from '@/engine/components/modes/TheoryGameMode'
 import { ExamMode } from '@/engine/components/modes/ExamMode'
 import { TheoryStudyMode } from '@/engine/components/modes/TheoryStudyMode'
 import { useFilters } from '@/engine/hooks/useFilters'
 import { useProgress } from '@/engine/hooks/useProgress'
 import type { ContentPack, PackMode, PlanLink, Question, TheoryArticle } from '@/engine/types'
-import { theoryForQuestion } from '@/engine/theoryLinks'
 import '@/engine/styles/index.css'
 
 const MODE_LABEL: Record<PackMode, string> = {
   questions: 'Вопросы', theory: 'Теория', 'theory-game': '🎮 Теория-игра', tools: 'Практикум', cards: 'Карточки', plan: 'План',
-  dashboard: 'Обзор', session: 'Пробник',
 }
 const TYPE_LABEL: Record<Question['type'], string> = {
   theory: 'теория', code: 'код', output: 'вывод', manual: 'написать', choice: 'выбор', num: 'расчёт',
@@ -44,9 +39,8 @@ function Trainer({ pack }: { pack: ContentPack }) {
   const navigate = useNavigate()
   const { filters, set } = useFilters(pack)
   const {
-    marks, toggleMark, cardsKnown, toggleCard, planDone, togglePlan, theoryDone, toggleTheory,
+    marks, toggleMark, cardsKnown, toggleCard, planDone, togglePlan,
     reset, reveal, setReveal, known, repeat,
-    notes, setNote, reviews, recordAttempt, exportProgress, importProgress,
   } = useProgress(pack)
 
   const searchRef = useRef<HTMLInputElement>(null)
@@ -101,7 +95,7 @@ function Trainer({ pack }: { pack: ContentPack }) {
   }, [pack.title, mode])
 
   /** План — единственный режим без фильтров: там нечего фильтровать. */
-  const showSidebar = mode !== 'plan' && mode !== 'dashboard' && mode !== 'session' && mode !== 'theory-game'
+  const showSidebar = mode !== 'plan' && mode !== 'theory-game'
 
   /** Сайдбар — свой скролл-контейнер (position:sticky + overflow-y:auto), и он
       не сбрасывается сам при выборе темы. Если до этого его прокрутили вниз
@@ -187,13 +181,11 @@ function Trainer({ pack }: { pack: ContentPack }) {
     const src = pool.length ? pool : questions
     const item = src[Math.floor(Math.random() * src.length)]
     if (!item) return
-    if (pack.id === 'interview') {
-      setRandomPick((previous) => ({
-        id: item.id,
-        filterKey: randomFilterKey,
-        nonce: (previous?.nonce ?? 0) + 1,
-      }))
-    }
+    setRandomPick((previous) => ({
+      id: item.id,
+      filterKey: randomFilterKey,
+      nonce: (previous?.nonce ?? 0) + 1,
+    }))
     document.getElementById('q-' + item.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
@@ -216,21 +208,6 @@ function Trainer({ pack }: { pack: ContentPack }) {
         <div className="top-in">
           <div className="brand">Тренажёр <span>{pack.title.toLowerCase()}</span></div>
 
-          {/* при сборке под один пак переключать нечего */}
-          {PACK_META.length > 1 && (
-            <div className="modes">
-              {PACK_META.map((p) => (
-                <button
-                  key={p.id} type="button"
-                  className={'md' + (p.id === pack.id ? ' on' : '')}
-                  onClick={() => navigate('/' + p.id)}
-                >
-                  {p.title}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div className="modes">
             {pack.modes.map((m) => (
               <button
@@ -238,12 +215,12 @@ function Trainer({ pack }: { pack: ContentPack }) {
                 className={'md' + (m === mode ? ' on' : '')}
                 onClick={() => changeFilters({ mode: m, topic: 'all' })}
               >
-                {m === 'theory-game' && pack.id === 'audit' ? 'Экзамен' : MODE_LABEL[m]}
+                {m === 'theory-game' ? 'Экзамен' : MODE_LABEL[m]}
               </button>
             ))}
           </div>
 
-          {mode === 'questions' && pack.id !== 'interview' && (
+          {mode === 'questions' && (
             <div className="modes">
               <button
                 type="button" className={'md' + (reveal ? ' on' : '')}
@@ -284,10 +261,7 @@ function Trainer({ pack }: { pack: ContentPack }) {
           <button
             type="button" className="btn gho"
             onClick={() => {
-              const message = pack.id === 'interview'
-                ? 'Сбросить прогресс вопросов, карточек, теории и игрового пути собеседования?'
-                : 'Сбросить отметки по вопросам, карточкам, теории и подготовке к экзамену?'
-              if (confirm(message)) reset()
+              if (confirm('Сбросить отметки по вопросам, карточкам, теории и подготовке к экзамену?')) reset()
             }}
           >
             Сброс
@@ -426,53 +400,19 @@ function Trainer({ pack }: { pack: ContentPack }) {
         )}
 
         <main id="list">
-          {mode === 'dashboard' && pack.id === 'interview' && (
-            <DashboardMode
-              pack={pack}
-              marks={marks}
-              reviews={reviews}
-              notes={notes}
-              cardsKnown={cardsKnown}
-              theoryDone={theoryDone}
-              known={known}
-              repeat={repeat}
-              onNavigate={goToLink}
-              onExport={exportProgress}
-              onImport={importProgress}
-            />
-          )}
-
-          {mode === 'session' && pack.id === 'interview' && (
-            <SessionMode
-              pack={pack}
-              reviews={reviews}
-              marks={marks}
-              onAttempt={recordAttempt}
-              onToggleMark={toggleMark}
-              onNavigate={goToLink}
-            />
-          )}
-
-          {mode === 'theory-game' && pack.id === 'interview' && (
-            <TheoryGameMode
-              pack={pack}
-              onOpenClassic={() => changeFilters({ mode: 'theory', topic: 'all', query: '', open: '' })}
-            />
-          )}
-
-          {mode === 'theory-game' && pack.id === 'audit' && (
+          {mode === 'theory-game' && (
             <ExamMode pack={pack} />
           )}
 
           {mode === 'plan' && pack.plan && (
             <PlanMode
-              weeks={pack.plan} done={planDone} context={pack.id === 'interview' ? 'interview' : 'audit'}
+              weeks={pack.plan} done={planDone}
               onToggle={togglePlan} onNavigate={goToLink}
             />
           )}
 
           {mode === 'tools' && (
-            <ToolsMode items={tools} demos={pack.demos} openId={filters.open} context={pack.id === 'interview' ? 'interview' : 'audit'} />
+            <ToolsMode items={tools} demos={pack.demos} openId={filters.open} />
           )}
 
           {mode === 'cards' && (
@@ -481,7 +421,6 @@ function Trainer({ pack }: { pack: ContentPack }) {
               total={pack.cards?.length ?? 0}
               known={cardsKnown}
               onToggleKnown={toggleCard}
-              context={pack.id === 'interview' ? 'interview' : 'audit'}
             />
           )}
 
@@ -492,10 +431,6 @@ function Trainer({ pack }: { pack: ContentPack }) {
                 articles={theory}
                 marks={marks}
                 onToggleMark={toggleMark}
-                notes={notes}
-                onNoteChange={setNote}
-                done={theoryDone}
-                onToggleDone={toggleTheory}
                 openId={filters.open}
               />}
               {listed.length === 0 && <div className="empty">Ничего не найдено — сбросьте фильтры</div>}
@@ -503,8 +438,7 @@ function Trainer({ pack }: { pack: ContentPack }) {
                 <div key={group.topic}>
                   <div className="grp">{group.topic}</div>
                   {group.items.map((item, i) => {
-                    const isRandomQuestion = pack.id === 'interview'
-                      && randomPick?.filterKey === randomFilterKey
+                    const isRandomQuestion = randomPick?.filterKey === randomFilterKey
                       && randomPick.id === item.id
                     return (
                         <QuestionCard
@@ -513,17 +447,10 @@ function Trainer({ pack }: { pack: ContentPack }) {
                           index={i}
                           mark={marks[item.id]}
                           onToggleMark={toggleMark}
-                          reveal={pack.id === 'interview' ? false : reveal}
+                          reveal={reveal}
                           demos={pack.demos}
                           highlighted={isRandomQuestion}
                           autoOpen={isRandomQuestion}
-                          note={pack.id === 'interview' ? notes[item.id] : undefined}
-                          onNoteChange={pack.id === 'interview' ? (value) => setNote(item.id, value) : undefined}
-                          notesEnabled={pack.id === 'interview'}
-                          context={pack.id === 'interview' ? 'interview' : 'audit'}
-                          hint={pack.id === 'interview' ? (item as Question).hint : undefined}
-                          theoryLinks={pack.id === 'interview' ? theoryForQuestion(item as Question, pack.theory).map((article) => ({ id: article.id, title: article.title, topic: article.topic })) : undefined}
-                          onOpenTheory={pack.id === 'interview' ? (id) => goToLink({ mode: 'theory', id }) : undefined}
                         />
                     )
                   })}

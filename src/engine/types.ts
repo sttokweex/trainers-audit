@@ -150,7 +150,7 @@ export interface PlanWeek {
  */
 export type LegacyDemo = (root: HTMLElement) => void
 
-export type PackMode = 'questions' | 'theory' | 'theory-game' | 'tools' | 'cards' | 'plan' | 'dashboard' | 'session'
+export type PackMode = 'questions' | 'theory' | 'theory-game' | 'tools' | 'cards' | 'plan'
 
 /** Группировка тем в сайдбаре. Если не задана — темы выводятся плоским списком. */
 export interface TopicCategory {
@@ -186,11 +186,3 @@ export interface ContentPack {
 
 /** Отметка пользователя по вопросу. */
 export type Mark = 'know' | 'repeat'
-
-/** Spaced repetition metadata for a question. */
-export interface ReviewState {
-  attempts: number
-  correct: number
-  next: number
-  last: number
-}

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { theoryForQuestion } from '@/engine/theoryLinks'
 import type { ContentPack, Mark, Question, TheoryArticle } from '@/engine/types'
 import { QuestionCard } from '../QuestionCard'
 import { TheoryCard } from '../TheoryCard'
@@ -17,23 +16,20 @@ function pickPair(article: TheoryArticle, questions: Question[]): Question[] {
 }
 
 export function TheoryStudyMode({
-  pack, articles, marks, onToggleMark, notes, onNoteChange, done, onToggleDone,
+  pack, articles, marks, onToggleMark,
   openId,
 }: {
   pack: ContentPack
   articles: TheoryArticle[]
   marks: Record<string, Mark | undefined>
   onToggleMark: (id: string, mark: Mark) => void
-  notes: Record<string, string>
-  onNoteChange: (id: string, value: string) => void
-  done: Record<string, boolean>
-  onToggleDone: (id: string) => void
   openId?: string
 }) {
   const [stage, setStage] = useState<Stage>('map')
   const [article, setArticle] = useState<TheoryArticle | null>(null)
   const [tasks, setTasks] = useState<Question[]>([])
   const [taskIndex, setTaskIndex] = useState(0)
+  const [done, setDone] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (article && !articles.some((item) => item.id === article.id)) {
@@ -76,7 +72,7 @@ export function TheoryStudyMode({
   }, [openId, articles, article?.id, openArticle])
 
   function finishArticle() {
-    if (article && !done[article.id]) onToggleDone(article.id)
+    if (article) setDone((previous) => ({ ...previous, [article.id]: true }))
     setArticle(null)
     setStage('map')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -86,16 +82,13 @@ export function TheoryStudyMode({
     <div className="theory-game">
       <div className="tg-topline"><button type="button" className="btn" onClick={() => setStage('map')}>← К темам</button><span>{article.topic}</span></div>
       <div className="tg-reading-head"><div className="tg-eyebrow">Теория · затем проверка и практика</div><h2>{article.title}</h2><p>{article.lead}</p></div>
-      <TheoryCard key={article.id} item={article} demos={pack.demos} autoOpen done={Boolean(done[article.id])} onToggleDone={() => onToggleDone(article.id)} />
+      <TheoryCard key={article.id} item={article} demos={pack.demos} autoOpen />
       <div className="tg-reading-action"><span>После чтения ответь на два вопроса по этой теме.</span><button type="button" className="btn pri" onClick={() => { setTaskIndex(0); setStage('tasks') }}>К вопросам →</button></div>
     </div>
   )
 
   if (article && stage === 'tasks') {
     const task = tasks[taskIndex]
-    const links = task && pack.id === 'interview'
-      ? theoryForQuestion(task, pack.theory).map((item) => ({ id: item.id, title: item.title, topic: item.topic }))
-      : undefined
     return (
       <div className="theory-game">
         <div className="tg-topline"><button type="button" className="btn" onClick={() => setStage('read')}>← Вернуться к теории</button><span>Закрепление · {article.topic}</span></div>
@@ -110,16 +103,6 @@ export function TheoryStudyMode({
             reveal={false}
             demos={pack.demos}
             autoOpen
-            context={pack.id === 'interview' ? 'interview' : 'audit'}
-            note={notes[task.id]}
-            onNoteChange={(value) => onNoteChange(task.id, value)}
-            notesEnabled={pack.id === 'interview'}
-            hint={task.hint}
-            theoryLinks={links}
-            onOpenTheory={(id) => {
-              const linked = pack.theory.find((item) => item.id === id)
-              if (linked) openArticle(linked)
-            }}
           /> : <div className="empty">Для этой статьи пока не найдено двух вопросов в банке. Добавь их в раздел «Вопросы», чтобы пройти закрепление.</div>}
           <div className="tg-reading-action">
             {taskIndex < tasks.length - 1

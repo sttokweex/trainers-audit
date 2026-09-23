@@ -19,15 +19,12 @@ const plural = (n: number, one: string, few: string, many: string) => {
 }
 
 export function TheoryCard({
-  item, demos, autoOpen = false, done = false, onToggleDone, examQuestions,
+  item, demos, autoOpen = false, examQuestions,
 }: {
   item: TheoryArticle
   demos: Record<string, LegacyDemo>
   /** Пришли по ссылке из плана: раскрыть и подвести к себе. */
   autoOpen?: boolean
-  /** Interview-only progress marker. Omit to keep the compact audit card unchanged. */
-  done?: boolean
-  onToggleDone?: () => void
   examQuestions?: Question[]
 }) {
   const [open, setOpen] = useState(autoOpen)
@@ -65,27 +62,14 @@ export function TheoryCard({
   )
 
   return (
-    <div className={'th-card' + (open ? ' open' : '') + (done ? ' theory-done' : '')} ref={rootRef} id={'a-' + item.id}>
+    <div className={'th-card' + (open ? ' open' : '')} ref={rootRef} id={'a-' + item.id}>
       <div className="th-h" onClick={() => setOpen((v) => !v)}>
         <div className="th-t">
           <h3>{item.title}</h3>
           <p>{item.lead}</p>
-          <div className="th-meta">{meta}{done ? ' · Пройдено' : ''}</div>
+          <div className="th-meta">{meta}</div>
         </div>
-        {onToggleDone ? (
-          <div className="th-side">
-            <span className="chip t">{item.topic}</span>
-            <button
-              type="button"
-              className={'th-done-btn' + (done ? ' on' : '')}
-              aria-pressed={done}
-              title={done ? 'Снять отметку о прочтении' : 'Отметить статью прочитанной'}
-              onClick={(e) => { e.stopPropagation(); onToggleDone() }}
-            >
-              {done ? '✓ Пройдено' : 'Отметить пройденной'}
-            </button>
-          </div>
-        ) : <span className="chip t">{item.topic}</span>}
+        <span className="chip t">{item.topic}</span>
       </div>
 
       {open && (
