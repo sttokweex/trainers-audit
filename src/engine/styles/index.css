@@ -1,0 +1,15 @@
+/* Стили перенесены из старых тренажёров и разложены по назначению.
+   Порядок важен: токены первыми, точечные стили interview после старых общих стилей audit. */
+
+@import './tokens.css';
+@import './header.css';
+@import './layout.css';
+@import './demos.css';
+@import './cards.css';
+@import './editor.css';
+@import './article.css';
+@import './study.css';
+@import './theory-game.css';
+@import './audit.css';
+@import './interview-reading.css';
+@import './question-flow.css';
